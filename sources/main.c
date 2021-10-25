@@ -31,7 +31,7 @@ int exit_with_details(int code, char *custom_message)
 {
     int err = errno;
     char *err_message = strerror(err);
-    printf("%s, error code %d, %s", custom_message, err, err_message);
+    printf("%s, error code %d, %s\n", custom_message, err, err_message);
     exit(code);
 }
 
