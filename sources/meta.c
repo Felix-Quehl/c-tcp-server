@@ -19,3 +19,10 @@ char *get_first_argument(int argc, char **argv)
         exit_with_details(1, "missing arguments");
     return argv[1];
 }
+
+void *malloc_memset(size_t size, int set)
+{
+    char *mem = malloc(size);
+    memset(mem, set, size);
+    return mem;
+}

@@ -56,10 +56,8 @@ void handle_peer_concurrent(int socket_fd, struct sockaddr_in peer_endpoint_meta
 void handle_peer(int socket_fd, struct sockaddr_in peer_endpoint_meta_infos)
 {
     struct IpAddress *ip_address = (struct IpAddress *)&(peer_endpoint_meta_infos.sin_addr.s_addr);
-    char *input_buffer = malloc(BUFFER_SIZE);
-    char *output_buffer = malloc(BUFFER_SIZE);
-    memset(input_buffer, 0, BUFFER_SIZE);
-    memset(output_buffer, 0, BUFFER_SIZE);
+    char *input_buffer = malloc_memset(BUFFER_SIZE, 0);
+    char *output_buffer = malloc_memset(BUFFER_SIZE, 0);
 
     receive(socket_fd, input_buffer);
     process(input_buffer, output_buffer);
@@ -75,8 +73,8 @@ void handle_peer(int socket_fd, struct sockaddr_in peer_endpoint_meta_infos)
         input_buffer,
         output_buffer);
 
-    free(input_buffer);
     free(output_buffer);
+    free(input_buffer);
 }
 
 void serve(int listening_socket_fd)
