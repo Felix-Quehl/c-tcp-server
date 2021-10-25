@@ -20,7 +20,7 @@ int get_socket()
 {
     int fd = socket(AF_INET, SOCK_STREAM, 0);
     if (fd == -1)
-        exit_with_details(1, "failed to create socket");
+        exit_with_details(1, "socket creation error");
     return fd;
 }
 
@@ -37,7 +37,7 @@ int bind_socket(int socket, struct sockaddr_in config)
 {
     int status = bind(socket, (struct sockaddr *)&config, sizeof(config));
     if (status < 0)
-        exit_with_details(1, "socket bind failed");
+        exit_with_details(1, "socket bind error");
     return status;
 }
 
@@ -50,7 +50,7 @@ void handle_peer_concurrent(int socket_fd, struct sockaddr_in peer_endpoint_meta
         _exit(0);
     }
     else if (process_id < 0)
-        exit_with_details(1, "fork failed");
+        exit_with_details(1, "process fork error");
 }
 
 void handle_peer(int socket_fd, struct sockaddr_in peer_endpoint_meta_infos)
@@ -90,14 +90,14 @@ void serve(int listening_socket_fd)
         handle_peer_concurrent(serving_socket_fd, peer_endpoint_meta_infos);
 
     if (serving_socket_fd < 0)
-        exit_with_details(1, "serving failed");
+        exit_with_details(1, "accept error");
 }
 
 void receive(int socket, char *buffer)
 {
     ssize_t status = recv(socket, buffer, BUFFER_SIZE, 0);
     if (status < 0)
-        exit_with_details(1, "write error");
+        exit_with_details(1, "request receive error");
 }
 
 void respond(int client_socket, char *output_buffer)
@@ -105,5 +105,5 @@ void respond(int client_socket, char *output_buffer)
     unsigned long payload_length = strlen(output_buffer);
     ssize_t status = write(client_socket, output_buffer, payload_length);
     if (status < 0)
-        exit_with_details(1, "write error");
+        exit_with_details(1, "responds write error");
 }
