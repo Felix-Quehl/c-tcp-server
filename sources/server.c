@@ -16,6 +16,30 @@ struct IpAddress
     uint8_t byte2;
     uint8_t byte3;
 };
+int get_socket()
+{
+    int fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (fd == -1)
+        exit_with_details(1, "failed to create socket");
+    return fd;
+}
+
+struct sockaddr_in configure_socket(int port)
+{
+    struct sockaddr_in server_endpoint;
+    server_endpoint.sin_family = AF_INET;
+    server_endpoint.sin_addr.s_addr = INADDR_ANY;
+    server_endpoint.sin_port = htons((u_int16_t)port);
+    return server_endpoint;
+}
+
+int bind_socket(int socket, struct sockaddr_in config)
+{
+    int status = bind(socket, (struct sockaddr *)&config, sizeof(config));
+    if (status < 0)
+        exit_with_details(1, "socket bind failed");
+    return status;
+}
 
 void serve(int listening_socket_fd)
 {
@@ -55,30 +79,6 @@ void serve(int listening_socket_fd)
         exit_with_details(1, "serving failed");
 }
 
-int get_socket()
-{
-    int fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (fd == -1)
-        exit_with_details(1, "failed to create socket");
-    return fd;
-}
-
-struct sockaddr_in configure_socket(int port)
-{
-    struct sockaddr_in server_endpoint;
-    server_endpoint.sin_family = AF_INET;
-    server_endpoint.sin_addr.s_addr = INADDR_ANY;
-    server_endpoint.sin_port = htons((u_int16_t)port);
-    return server_endpoint;
-}
-
-int bind_socket(int socket, struct sockaddr_in config)
-{
-    int status = bind(socket, (struct sockaddr *)&config, sizeof(config));
-    if (status < 0)
-        exit_with_details(1, "socket bind failed");
-    return status;
-}
 void receive(int socket, char *buffer)
 {
     ssize_t status = recv(socket, buffer, BUFFER_SIZE, 0);
