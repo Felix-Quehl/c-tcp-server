@@ -6,8 +6,6 @@
 #include <unistd.h>
 #include <pthread.h>
 
-void *connection_handler(void *);
-
 struct IpAddress
 {
     uint8_t byte0;
