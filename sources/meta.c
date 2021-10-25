@@ -1,11 +1,9 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <arpa/inet.h>
-#include <unistd.h>
+#include "meta.h"
 #include <errno.h>
 #include <error.h>
-#include <server.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 int exit_with_details(int code, char *custom_message)
 {

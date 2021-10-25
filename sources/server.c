@@ -3,8 +3,6 @@
 #include <stdlib.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-#include <errno.h>
-#include <error.h>
 #include <server.h>
 #include <meta.h>
 #include <logic.h>

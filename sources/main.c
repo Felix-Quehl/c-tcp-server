@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <arpa/inet.h>
 #include <server.h>
+#include "meta.h"
 
 int main(int argc, char **argv)
 {
