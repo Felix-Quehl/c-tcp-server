@@ -5,6 +5,8 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <errno.h>
+#include <error.h>
 
 struct IpAddress
 {
@@ -14,65 +16,98 @@ struct IpAddress
     uint8_t byte3;
 };
 
+int exit_with_details(int code, char *custom_message);
+char *get_argument(int argc, char **argv);
+int get_socket(void);
+struct sockaddr_in configure_socket(int port);
+int bind_socket(int socket, struct sockaddr_in config);
+void server(int socket_fd);
+
+int exit_with_details(int code, char *custom_message)
+{
+    int err = errno;
+    char *err_message = strerror(err);
+    printf("%s, error code %d, %s", custom_message, err, err_message);
+    exit(code);
+}
+
+char *get_argument(int argc, char **argv)
+{
+    if (argc < 2)
+        exit_with_details(1, "missing arguments");
+    return argv[1];
+}
+
+int get_socket()
+{
+    int fd;
+    fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (fd == -1)
+        exit_with_details(1, "failed to create socket");
+    return fd;
+}
+
+struct sockaddr_in configure_socket(int port)
+{
+    struct sockaddr_in server_endpoint;
+    server_endpoint.sin_family = AF_INET;
+    server_endpoint.sin_addr.s_addr = INADDR_ANY;
+    server_endpoint.sin_port = htons((u_int16_t)port);
+    return server_endpoint;
+}
+
+int bind_socket(int socket, struct sockaddr_in config)
+{
+    int status = bind(socket, (struct sockaddr *)&config, sizeof(config));
+    if (status < 0)
+        exit_with_details(1, "socket bind failed");
+    return status;
+}
+
+void server(int socket_fd)
+{
+    struct sockaddr_in client_endpoint;
+    struct sockaddr *client_endpoint_data = (struct sockaddr *)&client_endpoint;
+    struct IpAddress *ip_address = (struct IpAddress *)&(client_endpoint.sin_addr.s_addr);
+    int c = sizeof(struct sockaddr_in);
+    int client_socket;
+
+    listen(socket_fd, 3);
+    while ((client_socket = accept(socket_fd, client_endpoint_data, (socklen_t *)&c)))
+    {
+        char *read_buffer = malloc(1024);
+        char *write_buffer = malloc(1024);
+        memset(read_buffer, 0, 1024);
+        memset(write_buffer, 0, 1024);
+
+        recv(client_socket, read_buffer, 1024, 0);
+        sprintf(
+            write_buffer,
+            "hello %d.%d.%d.%d:%hu this is your echo '%s'",
+            ip_address->byte0,
+            ip_address->byte1,
+            ip_address->byte2,
+            ip_address->byte3,
+            client_endpoint.sin_port,
+            read_buffer);
+        free(read_buffer);
+
+        write(client_socket, write_buffer, strlen(write_buffer));
+        printf("%s\n", write_buffer);
+        free(write_buffer);
+    }
+    if (client_socket < 0)
+        exit_with_details(1, "serving failed");
+}
+
 int main(int argc, char **argv)
 {
-    int port;
-    int listening_socket;
-    int serving_socket;
-    int c;
-    struct sockaddr_in server_endpoint;
-    struct sockaddr_in client_endpoint;
+    char *port_argument = get_argument(argc, argv);
+    int port = atoi(port_argument);
+    int socket_fd = get_socket();
+    struct sockaddr_in server_endpoint = configure_socket(port);
+    bind_socket(socket_fd, server_endpoint);
+    server(socket_fd);
 
-    if (argc != 2)
-    {
-        printf("port argument missing");
-        return 1;
-    }
-    port = atoi(argv[1]);
-    listening_socket = socket(AF_INET, SOCK_STREAM, 0);
-    if (listening_socket == -1)
-    {
-        printf("creation error");
-        return 1;
-    }
-    else
-    {
-        server_endpoint.sin_family = AF_INET;
-        server_endpoint.sin_addr.s_addr = INADDR_ANY;
-        server_endpoint.sin_port = htons((u_int16_t)port);
-        if (bind(listening_socket, (struct sockaddr *)&server_endpoint, sizeof(server_endpoint)) < 0)
-        {
-            printf("bind error\n");
-            return 1;
-        }
-        else
-        {
-            printf("bind done\n");
-            listen(listening_socket, 3);
-            printf("Waiting for incoming connections...\n");
-            c = sizeof(struct sockaddr_in);
-            while ((serving_socket = accept(listening_socket, (struct sockaddr *)&client_endpoint, (socklen_t *)&c)))
-            {
-                struct IpAddress *ip = (struct IpAddress *)(&client_endpoint.sin_addr.s_addr);
-                char *buffer = malloc(1024);
-                char *message = malloc(1024);
-                memset(buffer, 0, 1024);
-                memset(message, 0, 1024);
-
-                recv(serving_socket, buffer, 1024, 0);
-                sprintf(message, "hello %d.%d.%d.%d:%hu this is your echo '%s'", ip->byte0, ip->byte1, ip->byte2, ip->byte3, client_endpoint.sin_port, buffer);
-                free(buffer);
-
-                write(serving_socket, message, strlen(message));
-                printf("%s\n", message);
-                free(message);
-            }
-            if (serving_socket < 0)
-            {
-                printf("serving error\n");
-                return 1;
-            }
-        }
-    }
     return 0;
 }
