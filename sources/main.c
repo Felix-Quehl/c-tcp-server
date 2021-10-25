@@ -19,7 +19,7 @@ struct IpAddress
 };
 
 int exit_with_details(int code, char *custom_message);
-char *get_argument(int argc, char **argv);
+char *get_first_argument(int argc, char **argv);
 int get_socket(void);
 struct sockaddr_in configure_socket(int port);
 int bind_socket(int socket, struct sockaddr_in config);
@@ -35,7 +35,7 @@ int exit_with_details(int code, char *custom_message)
     exit(code);
 }
 
-char *get_argument(int argc, char **argv)
+char *get_first_argument(int argc, char **argv)
 {
     if (argc < 2)
         exit_with_details(1, "missing arguments");
@@ -85,24 +85,25 @@ void receive(int socket, char *buffer)
         exit_with_details(1, "write error");
 }
 
-void serve(int socket_fd)
+void serve(int listening_socket_fd)
 {
-    struct sockaddr_in client_endpoint;
-    struct sockaddr *client_endpoint_data = (struct sockaddr *)&client_endpoint;
-    struct IpAddress *ip_address = (struct IpAddress *)&(client_endpoint.sin_addr.s_addr);
+    struct sockaddr_in peer_endpoint_meta_infos;
+    struct sockaddr *peer_endpoint_meta = (struct sockaddr *)&peer_endpoint_meta_infos;
+    struct IpAddress *ip_address = (struct IpAddress *)&(peer_endpoint_meta_infos.sin_addr.s_addr);
     socklen_t c = sizeof(struct sockaddr_in);
-    int client_socket;
+    int serving_socket_fd;
 
-    listen(socket_fd, 3);
-    while ((client_socket = accept(socket_fd, client_endpoint_data, &c)))
+    listen(listening_socket_fd, 3);
+
+    while ((serving_socket_fd = accept(listening_socket_fd, peer_endpoint_meta, &c)))
     {
         char *input_buffer = malloc(BUFFER_SIZE);
         char *output_buffer = malloc(BUFFER_SIZE);
         memset(input_buffer, 0, BUFFER_SIZE);
         memset(output_buffer, 0, BUFFER_SIZE);
 
-        receive(client_socket, input_buffer);
-        respond(client_socket, input_buffer, output_buffer);
+        receive(serving_socket_fd, input_buffer);
+        respond(serving_socket_fd, input_buffer, output_buffer);
 
         printf(
             "served %d.%d.%d.%d:%hu | request '%s' | response '%s'\n",
@@ -110,24 +111,24 @@ void serve(int socket_fd)
             ip_address->byte1,
             ip_address->byte2,
             ip_address->byte3,
-            client_endpoint.sin_port,
+            peer_endpoint_meta_infos.sin_port,
             input_buffer,
             output_buffer);
 
         free(input_buffer);
         free(output_buffer);
     }
-    if (client_socket < 0)
+    if (serving_socket_fd < 0)
         exit_with_details(1, "serving failed");
 }
 
 int main(int argc, char **argv)
 {
-    char *port_argument = get_argument(argc, argv);
-    int port = atoi(port_argument);
+    char *argument = get_first_argument(argc, argv);
+    int port = atoi(argument);
     int socket_fd = get_socket();
-    struct sockaddr_in server_endpoint = configure_socket(port);
-    bind_socket(socket_fd, server_endpoint);
+    struct sockaddr_in socket_config = configure_socket(port);
+    bind_socket(socket_fd, socket_config);
     serve(socket_fd);
     return 0;
 }
