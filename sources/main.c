@@ -24,6 +24,7 @@ int get_socket(void);
 struct sockaddr_in configure_socket(int port);
 int bind_socket(int socket, struct sockaddr_in config);
 void serve(int socket_fd);
+void receive(int socket, char *buffer);
 void respond(int client_socket, char *input_buffer, char *output_buffer);
 
 int exit_with_details(int code, char *custom_message)
@@ -68,10 +69,20 @@ int bind_socket(int socket, struct sockaddr_in config)
 
 void respond(int client_socket, char *input_buffer, char *output_buffer)
 {
+    ssize_t status;
     unsigned long payload_length;
     sprintf(output_buffer, "This is your echo '%s'", input_buffer);
     payload_length = strlen(output_buffer);
-    write(client_socket, output_buffer, payload_length);
+    status = write(client_socket, output_buffer, payload_length);
+    if (status < 0)
+        exit_with_details(1, "write error");
+}
+
+void receive(int socket, char *buffer)
+{
+    ssize_t status = recv(socket, buffer, BUFFER_SIZE, 0);
+    if (status < 0)
+        exit_with_details(1, "write error");
 }
 
 void serve(int socket_fd)
@@ -90,7 +101,7 @@ void serve(int socket_fd)
         memset(input_buffer, 0, BUFFER_SIZE);
         memset(output_buffer, 0, BUFFER_SIZE);
 
-        recv(client_socket, input_buffer, BUFFER_SIZE, 0);
+        receive(client_socket, input_buffer);
         respond(client_socket, input_buffer, output_buffer);
 
         printf(
