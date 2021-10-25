@@ -81,12 +81,12 @@ void serve(int listening_socket_fd)
 {
     struct sockaddr_in peer_endpoint_meta_infos;
     struct sockaddr *peer_endpoint_meta = (struct sockaddr *)&peer_endpoint_meta_infos;
-    socklen_t c = sizeof(struct sockaddr_in);
+    socklen_t size_of_meta_infos = sizeof(*peer_endpoint_meta);
     int serving_socket_fd;
 
     listen(listening_socket_fd, 3);
 
-    while ((serving_socket_fd = accept(listening_socket_fd, peer_endpoint_meta, &c)))
+    while ((serving_socket_fd = accept(listening_socket_fd, peer_endpoint_meta, &size_of_meta_infos)))
         handle_peer_concurrent(serving_socket_fd, peer_endpoint_meta_infos);
 
     if (serving_socket_fd < 0)
