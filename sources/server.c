@@ -16,6 +16,7 @@ struct IpAddress
     uint8_t byte2;
     uint8_t byte3;
 };
+
 int get_socket()
 {
     int fd = socket(AF_INET, SOCK_STREAM, 0);
