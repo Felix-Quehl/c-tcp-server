@@ -41,40 +41,56 @@ int bind_socket(int socket, struct sockaddr_in config)
     return status;
 }
 
+void handle_peer_concurrent(int socket_fd, struct sockaddr_in peer_endpoint_meta_infos)
+{
+    int process_id = fork();
+    if (process_id == 0)
+    {
+        handle_peer(socket_fd, peer_endpoint_meta_infos);
+        _exit(0);
+    }
+    else if (process_id < 0)
+        exit_with_details(1, "fork failed");
+}
+
+void handle_peer(int socket_fd, struct sockaddr_in peer_endpoint_meta_infos)
+{
+    struct IpAddress *ip_address = (struct IpAddress *)&(peer_endpoint_meta_infos.sin_addr.s_addr);
+    char *input_buffer = malloc(BUFFER_SIZE);
+    char *output_buffer = malloc(BUFFER_SIZE);
+    memset(input_buffer, 0, BUFFER_SIZE);
+    memset(output_buffer, 0, BUFFER_SIZE);
+
+    receive(socket_fd, input_buffer);
+    process(input_buffer, output_buffer);
+    respond(socket_fd, output_buffer);
+
+    printf(
+        "served %d.%d.%d.%d:%hu | request '%s' | response '%s'\n",
+        ip_address->byte0,
+        ip_address->byte1,
+        ip_address->byte2,
+        ip_address->byte3,
+        peer_endpoint_meta_infos.sin_port,
+        input_buffer,
+        output_buffer);
+
+    free(input_buffer);
+    free(output_buffer);
+}
+
 void serve(int listening_socket_fd)
 {
     struct sockaddr_in peer_endpoint_meta_infos;
     struct sockaddr *peer_endpoint_meta = (struct sockaddr *)&peer_endpoint_meta_infos;
-    struct IpAddress *ip_address = (struct IpAddress *)&(peer_endpoint_meta_infos.sin_addr.s_addr);
     socklen_t c = sizeof(struct sockaddr_in);
     int serving_socket_fd;
 
     listen(listening_socket_fd, 3);
 
     while ((serving_socket_fd = accept(listening_socket_fd, peer_endpoint_meta, &c)))
-    {
-        char *input_buffer = malloc(BUFFER_SIZE);
-        char *output_buffer = malloc(BUFFER_SIZE);
-        memset(input_buffer, 0, BUFFER_SIZE);
-        memset(output_buffer, 0, BUFFER_SIZE);
+        handle_peer_concurrent(serving_socket_fd, peer_endpoint_meta_infos);
 
-        receive(serving_socket_fd, input_buffer);
-        process(input_buffer, output_buffer);
-        respond(serving_socket_fd, output_buffer);
-
-        printf(
-            "served %d.%d.%d.%d:%hu | request '%s' | response '%s'\n",
-            ip_address->byte0,
-            ip_address->byte1,
-            ip_address->byte2,
-            ip_address->byte3,
-            peer_endpoint_meta_infos.sin_port,
-            input_buffer,
-            output_buffer);
-
-        free(input_buffer);
-        free(output_buffer);
-    }
     if (serving_socket_fd < 0)
         exit_with_details(1, "serving failed");
 }

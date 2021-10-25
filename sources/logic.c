@@ -3,5 +3,5 @@
 
 void process(char *input_buffer, char *output_buffer)
 {
-    sprintf(output_buffer, "This is your echo '%s'", input_buffer);
+    sprintf(output_buffer, "echoing... %s", input_buffer);
 }
