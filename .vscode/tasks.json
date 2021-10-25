@@ -9,7 +9,9 @@
                 "isDefault": true
             },
             "command": [
-                "make"
+                "make",
+                "clean",
+                "all"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"

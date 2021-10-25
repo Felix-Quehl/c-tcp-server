@@ -7,9 +7,7 @@
             "request": "launch",
             "cwd": "${workspaceFolder}",
             "program": "${workspaceFolder}/bin/a.out",
-            "args": [
-                "8888"
-            ],
+            "envFile": "${workspaceFolder}/.vscode/.env",
             "MIMode": "gdb",
             "preLaunchTask": "build"
         }

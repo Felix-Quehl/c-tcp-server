@@ -2,13 +2,27 @@
 #include <arpa/inet.h>
 #include <server.h>
 #include "meta.h"
+#include "config.h"
 
-int main(int argc, char **argv)
+#define ENV_VAR_CONFIG "CONFIG"
+
+int main()
 {
-    char *argument = get_first_argument(argc, argv);
-    int port = atoi(argument);
-    int socket_fd = get_socket();
-    struct sockaddr_in socket_config = configure_socket(port);
+    struct Configuration *configuration;
+    int status_code;
+    int port;
+    int socket_fd;
+    struct sockaddr_in socket_config;
+
+    configuration = allocate_config();
+    status_code = load_config(ENV_VAR_CONFIG, configuration);
+
+    if (status_code == 0)
+        print_config(configuration);
+
+    port = atoi(configuration->Port);
+    socket_fd = get_socket();
+    socket_config = configure_socket(port);
     bind_socket(socket_fd, socket_config);
     serve(socket_fd);
     return 0;
